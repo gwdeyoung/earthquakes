@@ -1,5 +1,6 @@
-# Oklahoma Earthquakes
-A shiny app that show the location and time intervals between earthquakes in central/northern Oklahoma.
+# Frequency of Oklahoma Earthquakes
+A shiny app that show the location and time intervals between earthquakes
+in central/northern Oklahoma.
 
 ## Project URL
 The compiled project may be veiwed at https://gdeyoung.shinyapps.io/project/
