@@ -1,0 +1,102 @@
+Frequency of Oklahoma earthquakes.
+========================================================
+author: Gary De Young
+date: 2015-01-30
+
+========================================================
+## The Ground is Shaking!
+Until recently when people thought of where earthquakes occurred in the U.S. the did not think of Oklahoma!
+Earthquakes in the eastern 2/3's of the US were rare. Some occurring in the in the Missouri, Arkansas, Kentucky and Tenseness region.
+
+### Majority of Quakes Today (mag 2 and larger)
+- California: Mainly along the coast and some the Sierra mountains
+- Oklahoma: Central/Northern Oklahoma!
+
+
+========================================================
+## Oklahome: Increase in frequency
+The images show a dramatic increase in the Oklahoma area. Both show only 2.3 or larger 
+quakes, the minimum magnitude in the data for 2006.
+<table border=0>
+<tr>
+<td><img src='figures/US2006.png' width='500px'></td>
+<td><img src='figures/US2016.png' width='500px'></td>
+</tr>
+<tr>
+<td style='text-align:center'>January 2006</td>
+<td style='text-align:center'>January 2016</td>
+</tr>
+</table>
+The increasing counts may be due to changing methods of detection; however, a new cluster of quakes is present in Oklahoma (central U.S.A.)
+
+Count Summary
+========================================================
+Number of quakes 2.3 or greater in the Oklahoma region.
+```{r, echo=FALSE, }
+getEarthQuakeData <- function(redo=FALSE){
+    if (redo | !file.exists('../data/EarthQuakesOK.rds')) {
+        
+        U1 <- "http://earthquake.usgs.gov/fdsnws/event/1/query.csv?starttime="
+        U2 <- "-01-01%2000:00:00&latitude=35.2&longitude=-98.5&maxradiuskm=300&minmagnitude=1&eventtype=earthquake&endtime="
+        U3 <- "-12-31%2023:59:59&orderby=time"
+        
+        EarthQuakes = data.frame()
+        for (year in seq(from=2000,to=2015,by=1)){
+            URL  <-  paste0(U1,year,U2,year,U3)
+            print(URL)
+            TMP <- read.csv(file(description = URL))
+            print(dim(TMP))
+            EarthQuakes <- rbind(EarthQuakes,TMP)
+            Sys.sleep(1)
+        }
+        
+        EarthQuakesOK <- EarthQuakes[grep('Oklahoma',EarthQuakes$place),]
+        gd <- EarthQuakesOK$mag>0 & !is.na(EarthQuakesOK$mag)
+        EarthQuakesOK <- EarthQuakesOK[gd,]
+        EarthQuakesOK$year <- format(as.Date(EarthQuakesOK$time),'%Y')
+        EarthQuakesOK$ptime <- as.POSIXct(sub('T',' ',EarthQuakesOK$time))
+        EarthQuakesOK <- EarthQuakesOK[order(EarthQuakesOK$ptime),]
+        
+        save(EarthQuakesOK,file='../data/EarthQuakesOK.rds')
+        assign('EarthQuakesOK',EarthQuakesOK,envir = .GlobalEnv);
+    } else {
+        load(file = '../data/EarthQuakesOK.rds',envir = .GlobalEnv)
+    }
+    
+    TD <- data.frame(year=EarthQuakesOK[EarthQuakesOK$ptime<max(EarthQuakesOK$ptime),c('year')])
+    TD$start <- EarthQuakesOK[EarthQuakesOK$ptime<max(EarthQuakesOK$ptime),c('ptime')]
+    TD$end <- EarthQuakesOK[EarthQuakesOK$ptime>min(EarthQuakesOK$ptime),c('ptime')]
+    TD$diff <- as.numeric(TD$end-TD$start)/(24*60*60)
+    assign('TD',TD,envir = .GlobalEnv);
+    
+    if (redo | !file.exists('../data/map.rds')) {
+        map <- get_map(location = c(lon = -97.75, lat = 35.9), zoom = 8, maptype = "roadmap")
+        save(map,file='../data/map.rds')
+        assign('map',map,envir = .GlobalEnv)
+    } else {
+        load(file = '../data/map.rds',envir = .GlobalEnv)
+    }
+}
+getEarthQuakeData()
+```
+```{r,  echo=FALSE}
+tmp  <- data.frame(year=seq(from=2001,to=2015,step=1),cnt=0)
+for (year in seq(from=2001,to=2015,by=1)){
+    tmp$cnt[year-2000] <- length(EarthQuakesOK$mag[EarthQuakesOK$mag>2.3 & EarthQuakesOK$year==year])
+}
+plot(x=tmp$year,y=tmp$cnt,xlab='Year',ylab = 'Count')
+```
+***
+```{r,echo=FALSE}
+print(tmp)
+```
+Shiny Web App
+========================================================
+Using the web app at https://gdeyoung.shinyapps.io/project/
+
+- You explore other years 2001 to 2015 and veiw plots of the locations of quakes.
+- You can change the magnitude of the quakes that are counted.
+- You can see distributions of the quake magnitude or time intervals between quakes.
+
+<img src='figures/OK2013.png' width='400px'>
+
